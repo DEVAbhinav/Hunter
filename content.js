@@ -191,7 +191,8 @@
   
   // --- 5. DOM INTERACTION & OBSERVATION ---
   function getCurrentContactName() {
-    const contactElement = document.querySelector('#main header div[role="button"] span[dir="auto"]');
+    // More specific selector for the contact name in the main chat panel header
+    const contactElement = document.querySelector('#main header .x78zum5.xdt5ytf.x1iyjqo2 .x1iyjqo2.x6ikm8r');
     return contactElement ? contactElement.textContent.trim() : null;
   }
   
@@ -217,6 +218,7 @@
     return node ? node.textContent.trim() : '';
   }
 
+  
   function observeChatForNewMessages() {
     if (chatObserver) {
       chatObserver.disconnect();
@@ -249,18 +251,48 @@
     chatObserver.observe(chatContainer, { childList: true, subtree: true });
     console.log("Mindful AI: Observing for new messages in current chat.");
   }
+
+  function observeForActiveChatChange(appObserver) {
+    const sidePanel = document.querySelector('#pane-side');
+    if (sidePanel) {
+        console.log("Mindful AI: Side panel detected. Observing for active chat changes.");
+        const chatListObserver = new MutationObserver((mutations) => {
+            // Check if the active chat has changed
+            const newContactName = getCurrentContactName();
+            if (newContactName && newContactName !== currentContactName) {
+                console.log("Mindful AI: Active chat changed, handling it.");
+                handleChatChange();
+            }
+        });
+
+        // Observe for changes in attributes of chat items, which indicates a change in active chat
+        chatListObserver.observe(sidePanel, { 
+            childList: true, 
+            subtree: true, 
+            attributes: true, 
+            attributeFilter: ['class'] 
+        });
+        
+        // Disconnect the app observer as we have found what we need
+        if(appObserver) appObserver.disconnect();
+    }
+  }
   
   async function handleChatChange() {
-    const contactName = getCurrentContactName();
-    
-    if (contactName && contactName !== currentContactName) {
-      console.log(`Switching contact to: ${contactName}`);
-      currentContactName = contactName;
-
-      document.querySelectorAll('.contact-name').forEach(el => el.textContent = currentContactName);
-      await loadStrategyForContact(currentContactName);
-      triggerSuggestionGeneration();
-      observeChatForNewMessages();
+    try {
+      const contactName = getCurrentContactName();
+      
+      if (contactName && contactName !== currentContactName) {
+        console.log(`Switching contact to: ${contactName}`);
+        currentContactName = contactName;
+  
+        document.querySelectorAll('.contact-name').forEach(el => el.textContent = currentContactName);
+        await loadStrategyForContact(currentContactName);
+        triggerSuggestionGeneration();
+        observeChatForNewMessages();
+      }
+    } catch (error) {
+      console.error("Mindful AI: Error during chat change:", error);
     }
   }
 
@@ -269,17 +301,23 @@
     initializeUI();
 
     const appObserver = new MutationObserver((mutations, obs) => {
-      const mainPanel = document.querySelector('#main');
-      if (mainPanel) {
-        console.log("Mindful AI: Main panel detected. Setting up chat change observer.");
-        
-        handleChatChange();
+        // First, try to set up the more specific observer for active chat changes
+        observeForActiveChatChange(obs);
 
-        const mainPanelObserver = new MutationObserver(handleChatChange);
-        mainPanelObserver.observe(mainPanel, { childList: true, subtree: true });
+        // Fallback to observing the main panel if the side panel isn't there yet
+        const mainPanel = document.querySelector('#main');
+        if (mainPanel && !document.querySelector('#pane-side')) {
+            console.log("Mindful AI: Main panel detected. Setting up chat change observer as fallback.");
+            
+            handleChatChange(); // Initial call
 
-        obs.disconnect();
-      }
+            const mainPanelObserver = new MutationObserver(() => {
+                setTimeout(handleChatChange, 150);
+            });
+            mainPanelObserver.observe(mainPanel.querySelector('header'), { childList: true, subtree: true, characterData: true });
+
+            obs.disconnect();
+        }
     });
 
     appObserver.observe(document.body, { childList: true, subtree: true });
