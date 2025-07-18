@@ -36,9 +36,12 @@
         <h3>Custom Strategy for <strong class="contact-name">...</strong></h3>
         <p style="font-size: 13px; margin-top: 0; color: #666;">Define how the AI should reply to this person.</p>
         <textarea id="ai-strategy-input" placeholder="e.g., Always be empathetic, but firm about my boundaries..."></textarea>
+        <h3 style="margin-top: 15px;">API Key</h3>
+        <p style="font-size: 13px; margin-top: 0; color: #666;">Optional: Use your own API key.</p>
+        <input type="password" id="ai-api-key-input" placeholder="Enter your API key" style="width: 95%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"/>
         <div class="ai-settings-controls">
           <button id="ai-settings-cancel">Cancel</button>
-          <button id="ai-settings-save">✔️ Save Strategy</button>
+          <button id="ai-settings-save">✔️ Save Settings</button>
         </div>
       </div>
     `;
@@ -106,23 +109,29 @@
     const suggestionsContainer = document.getElementById('ai-suggestions-container');
     suggestionsContainer.innerHTML = `<div class="ai-status-message">Generating...</div>`;
 
-    const payload = {
-      chatHistory: getChatHistory(),
-      customStrategy: currentStrategy,
-      userDraft: userDraft
-    };
+    // Load API key before sending the message
+    chrome.storage.local.get('apiKey', (data) => {
+        const apiKey = data.apiKey || null;
 
-    chrome.runtime.sendMessage({ action: "generateReplies", payload }, (response) => {
-      if (chrome.runtime.lastError) {
-        console.error("Chrome runtime error:", chrome.runtime.lastError.message);
-        suggestionsContainer.innerHTML = `<div class="ai-status-message">Error: Could not connect to the extension. Please reload the page.</div>`;
-        return;
-      }
-      if (response && response.status === 'success') {
-        displaySuggestions(response.suggestions);
-      } else {
-        suggestionsContainer.innerHTML = `<div class="ai-status-message">Error: ${response?.message || 'Could not get suggestions.'}</div>`;
-      }
+        const payload = {
+          chatHistory: getChatHistory(),
+          customStrategy: currentStrategy,
+          userDraft: userDraft,
+          apiKey: apiKey // Pass the API key in the payload
+        };
+
+        chrome.runtime.sendMessage({ action: "generateReplies", payload }, (response) => {
+          if (chrome.runtime.lastError) {
+            console.error("Chrome runtime error:", chrome.runtime.lastError.message);
+            suggestionsContainer.innerHTML = `<div class="ai-status-message">Error: Could not connect to the extension. Please reload the page.</div>`;
+            return;
+          }
+          if (response && response.status === 'success') {
+            displaySuggestions(response.suggestions);
+          } else {
+            suggestionsContainer.innerHTML = `<div class="ai-status-message">Error: ${response?.message || 'Could not get suggestions.'}</div>`;
+          }
+        });
     });
   }
 
@@ -153,6 +162,12 @@
   // --- 4. SETTINGS & STORAGE ---
   function openSettings() {
     document.getElementById('ai-strategy-input').value = currentStrategy;
+    // Load and display the API key
+    chrome.storage.local.get('apiKey', (data) => {
+        if (data.apiKey) {
+            document.getElementById('ai-api-key-input').value = data.apiKey;
+        }
+    });
     document.getElementById('ai-settings-modal').style.display = 'flex';
   }
 
@@ -162,10 +177,21 @@
 
   function saveSettings() {
     const newStrategy = document.getElementById('ai-strategy-input').value;
+    const newApiKey = document.getElementById('ai-api-key-input').value;
+
     currentStrategy = newStrategy;
-    // Save strategy using the contact's name as the key
-    chrome.storage.local.set({ [currentContactName]: newStrategy }, () => {
-      console.log(`Strategy saved for ${currentContactName}`);
+
+    const settingsToSave = {
+        [currentContactName]: newStrategy,
+    };
+
+    if (newApiKey) {
+        settingsToSave.apiKey = newApiKey;
+    }
+
+    // Save strategy and API key
+    chrome.storage.local.set(settingsToSave, () => {
+      console.log(`Settings saved for ${currentContactName}`);
       closeSettings();
       triggerSuggestionGeneration();
     });

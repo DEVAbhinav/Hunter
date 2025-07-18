@@ -4,8 +4,8 @@
 // This service worker handles all communication with the AI model
 // and manages background tasks.
 
-// Import the API key from the config file
-import { apiKey } from './config.js';
+// Import the API key from the config file, and rename it for clarity
+import { apiKey as defaultApiKey } from './config.js';
 
 // Listen for messages from the content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -25,13 +25,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function getAiSuggestions(payload) {
-  // Destructure payload
-  const { chatHistory, customStrategy, userDraft } = payload;
+  // Destructure payload, including the optional user-provided API key
+  const { chatHistory, customStrategy, userDraft, apiKey } = payload;
 
   console.log("Received payload for AI suggestions:", payload);
+
+  // Use the user's API key if provided, otherwise fall back to the default
+  const keyToUse = apiKey || defaultApiKey;
+
+  if (!keyToUse) {
+    throw new Error("API key is missing. Please add it to config.js or in the extension settings.");
+  }
+
   // --- THIS IS THE REAL GEMINI API CALL ---
-  // The API key is now loaded from config.js
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${keyToUse}`;
 
   console.log("Calling Gemini API with payload:", payload);
 
@@ -43,16 +50,17 @@ async function getAiSuggestions(payload) {
     "${userDraft}"
 
     **Task:**
-    Based on the strategy and history, refine the user's draft reply. Provide 3 improved versions. Separate each suggestion with a newline and three dashes (\\n---\\n).
+    Based on the strategy and history, refine the user's draft reply. Provide 3 improved versions in a JSON array.
     `;
   } else {
     taskDescription = `
     **Task:**
-    Based on the strategy and history, suggest 3 potential replies to the last message. Separate each suggestion with a newline and three dashes (\\n---\\n).
+    Based on the strategy and history, suggest 3 potential replies to the last message in a JSON array.
     `;
   }
 
   const prompt = `You are a communication assistant. Your goal is to help the user reply to messages based on a specific strategy.
+  You must reply with a valid JSON object containing a single key "suggestions" which is an array of strings.
 
   **Custom Reply Strategy:**
   ${customStrategy || "Reply in a friendly and supportive tone."}
@@ -71,7 +79,10 @@ async function getAiSuggestions(payload) {
     contents: [{
       role: "user",
       parts: [{ text: prompt }]
-    }]
+    }],
+    generationConfig: {
+      response_mime_type: "application/json",
+    }
   };
   console.log("--- API PAYLOAD ---");
   console.log(JSON.stringify(apiPayload, null, 2));
@@ -98,9 +109,14 @@ async function getAiSuggestions(payload) {
         result.candidates[0].content.parts.length > 0) {
       
       const rawText = result.candidates[0].content.parts[0].text;
-      // The model is instructed to separate suggestions with "\n---\n"
-      // We split the string to get an array of suggestions.
-      const suggestions = rawText.split('\n---\n').map(s => s.trim()).filter(s => s);
+      // The model is now instructed to return a JSON string.
+      const parsedJson = JSON.parse(rawText);
+      
+      if (!parsedJson.suggestions || !Array.isArray(parsedJson.suggestions)) {
+        throw new Error("Invalid JSON structure in API response. 'suggestions' array not found.");
+      }
+      
+      const suggestions = parsedJson.suggestions.map(s => s.trim()).filter(s => s);
       
       console.log("Received suggestions from AI:", suggestions);
       return suggestions;
