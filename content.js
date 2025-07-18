@@ -28,6 +28,14 @@
     `;
     document.body.appendChild(panel);
 
+    // Restore panel position
+    chrome.storage.local.get('panelPosition', (data) => {
+        if (data.panelPosition) {
+            panel.style.top = data.panelPosition.top;
+            panel.style.left = data.panelPosition.left;
+        }
+    });
+
     // Settings Modal
     const modal = document.createElement('div');
     modal.id = 'ai-settings-modal';
@@ -36,6 +44,17 @@
         <h3>Custom Strategy for <strong class="contact-name">...</strong></h3>
         <p style="font-size: 13px; margin-top: 0; color: #666;">Define how the AI should reply to this person.</p>
         <textarea id="ai-strategy-input" placeholder="e.g., Always be empathetic, but firm about my boundaries..."></textarea>
+        
+        <h3 style="margin-top: 15px;">Model Selection</h3>
+        <p style="font-size: 13px; margin-top: 0; color: #666;">Choose the AI model for generating suggestions.</p>
+        <select id="ai-model-select" style="width: 98%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;">
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-2.5-flash-lite-preview-06-17">Gemini 2.5 Flash-Lite (Preview)</option>
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+        </select>
+        <p id="ai-model-description" style="font-size: 12px; color: #666; margin-top: 5px; min-height: 40px;"></p>
+
         <h3 style="margin-top: 15px;">API Key</h3>
         <p style="font-size: 13px; margin-top: 0; color: #666;">Optional: Use your own API key.</p>
         <input type="password" id="ai-api-key-input" placeholder="Enter your API key" style="width: 95%; padding: 8px; border-radius: 4px; border: 1px solid #ccc;"/>
@@ -58,12 +77,31 @@
     document.getElementById('ai-refresh-btn').addEventListener('click', () => triggerSuggestionGeneration());
     document.getElementById('ai-minimize-btn').addEventListener('click', toggleMinimizePanel);
 
+    // Draggable Panel Logic
+    const panelHeader = document.querySelector('.ai-panel-header');
+    panelHeader.addEventListener('mousedown', onDragStart);
+
     // Settings Modal Controls
     document.getElementById('ai-settings-save').addEventListener('click', saveSettings);
     document.getElementById('ai-settings-cancel').addEventListener('click', closeSettings);
     document.getElementById('ai-settings-modal').addEventListener('click', (e) => {
         if (e.target.id === 'ai-settings-modal') closeSettings();
     });
+
+    // Model selection description
+    const modelSelect = document.getElementById('ai-model-select');
+    const modelDescriptionEl = document.getElementById('ai-model-description');
+    const modelDescriptions = {
+        "gemini-2.5-pro": "Enhanced thinking and reasoning, multimodal understanding, advanced coding, and more.",
+        "gemini-2.5-flash": "Adaptive thinking, cost efficiency.",
+        "gemini-2.5-flash-lite-preview-06-17": "Most cost-efficient model supporting high throughput.",
+        "gemini-2.0-flash": "Next generation features, speed, and realtime streaming."
+    };
+    modelSelect.addEventListener('change', (e) => {
+        modelDescriptionEl.textContent = modelDescriptions[e.target.value] || '';
+    });
+    // Set initial description
+    modelDescriptionEl.textContent = modelDescriptions[modelSelect.value];
 
     // Refine Button
     document.querySelector('.ai-refine-button').addEventListener('click', () => {
@@ -94,6 +132,72 @@
   }
 
   // --- 3. CORE LOGIC ---
+
+  let isDragging = false;
+  let offsetX, offsetY;
+
+  function onDragStart(e) {
+    // Prevent dragging when clicking on buttons
+    if (e.target.tagName === 'BUTTON') return;
+
+    isDragging = true;
+    const panel = document.getElementById('ai-mindful-panel');
+    panel.classList.add('dragging'); // Disable transitions while dragging
+    const panelHeader = document.querySelector('.ai-panel-header');
+    
+    // Calculate offset from the top-left of the panel
+    const rect = panel.getBoundingClientRect();
+    offsetX = e.clientX - rect.left;
+    offsetY = e.clientY - rect.top;
+
+    panelHeader.style.cursor = 'grabbing';
+
+    // Add listeners to the document to capture mouse movement anywhere on the page
+    document.addEventListener('mousemove', onDragMove);
+    document.addEventListener('mouseup', onDragEnd, { once: true }); // { once: true } automatically removes the listener after it's called
+  }
+
+  function onDragMove(e) {
+    if (!isDragging) return;
+    
+    const panel = document.getElementById('ai-mindful-panel');
+    
+    // Calculate new position
+    let newLeft = e.clientX - offsetX;
+    let newTop = e.clientY - offsetY;
+
+    // Constrain movement within the viewport
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const panelWidth = panel.offsetWidth;
+    const panelHeight = panel.offsetHeight;
+
+    if (newLeft < 0) newLeft = 0;
+    if (newTop < 0) newTop = 0;
+    if (newLeft + panelWidth > viewportWidth) newLeft = viewportWidth - panelWidth;
+    if (newTop + panelHeight > viewportHeight) newTop = viewportHeight - panelHeight;
+
+    panel.style.left = `${newLeft}px`;
+    panel.style.top = `${newTop}px`;
+    
+    // Remove fixed bottom/right positioning if it exists
+    panel.style.right = 'auto';
+    panel.style.bottom = 'auto';
+  }
+
+  function onDragEnd() {
+    isDragging = false;
+    const panel = document.getElementById('ai-mindful-panel');
+    panel.classList.remove('dragging'); // Re-enable transitions
+    const panelHeader = document.querySelector('.ai-panel-header');
+    panelHeader.style.cursor = 'grab';
+
+    document.removeEventListener('mousemove', onDragMove);
+    
+    // Save the final position
+    const position = { top: panel.style.top, left: panel.style.left };
+    chrome.storage.local.set({ panelPosition: position });
+  }
   
   function toggleMinimizePanel() {
     const panel = document.getElementById('ai-mindful-panel');
@@ -109,15 +213,17 @@
     const suggestionsContainer = document.getElementById('ai-suggestions-container');
     suggestionsContainer.innerHTML = `<div class="ai-status-message">Generating...</div>`;
 
-    // Load API key before sending the message
-    chrome.storage.local.get('apiKey', (data) => {
+    // Load API key and model before sending the message
+    chrome.storage.local.get(['apiKey', 'selectedModel'], (data) => {
         const apiKey = data.apiKey || null;
+        const selectedModel = data.selectedModel || null;
 
         const payload = {
           chatHistory: getChatHistory(),
           customStrategy: currentStrategy,
           userDraft: userDraft,
-          apiKey: apiKey // Pass the API key in the payload
+          apiKey: apiKey, // Pass the API key in the payload
+          model: selectedModel // Pass the selected model
         };
 
         chrome.runtime.sendMessage({ action: "generateReplies", payload }, (response) => {
@@ -162,11 +268,17 @@
   // --- 4. SETTINGS & STORAGE ---
   function openSettings() {
     document.getElementById('ai-strategy-input').value = currentStrategy;
-    // Load and display the API key
-    chrome.storage.local.get('apiKey', (data) => {
+    // Load and display API key and model
+    chrome.storage.local.get(['apiKey', 'selectedModel'], (data) => {
         if (data.apiKey) {
             document.getElementById('ai-api-key-input').value = data.apiKey;
         }
+        const modelSelect = document.getElementById('ai-model-select');
+        if (data.selectedModel) {
+            modelSelect.value = data.selectedModel;
+        }
+        // Trigger change to update description
+        modelSelect.dispatchEvent(new Event('change'));
     });
     document.getElementById('ai-settings-modal').style.display = 'flex';
   }
@@ -178,11 +290,13 @@
   function saveSettings() {
     const newStrategy = document.getElementById('ai-strategy-input').value;
     const newApiKey = document.getElementById('ai-api-key-input').value;
+    const selectedModel = document.getElementById('ai-model-select').value;
 
     currentStrategy = newStrategy;
 
     const settingsToSave = {
         [currentContactName]: newStrategy,
+        selectedModel: selectedModel
     };
 
     if (newApiKey) {
@@ -191,6 +305,9 @@
 
     // Save strategy and API key
     chrome.storage.local.set(settingsToSave, () => {
+      if (!newApiKey) {
+          chrome.storage.local.remove('apiKey');
+      }
       console.log(`Settings saved for ${currentContactName}`);
       closeSettings();
       triggerSuggestionGeneration();

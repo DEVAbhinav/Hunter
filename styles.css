@@ -15,8 +15,8 @@
 /* Main Panel Container */
 #ai-mindful-panel {
   position: fixed;
-  bottom: 100px; /* Adjust as needed */
-  right: 20px;
+  top: 100px; /* Initial position */
+  right: 20px; /* Initial position */
   width: 320px;
   background-color: var(--panel-bg);
   border-radius: 12px;
@@ -31,11 +31,16 @@
   max-height: 400px; /* Set a max height for the whole panel */
 }
 
+/* Disable transitions when dragging for a more responsive feel */
+#ai-mindful-panel.dragging {
+  transition: none;
+}
+
 /* Minimized State for the Panel */
 #ai-mindful-panel.minimized {
   height: 45px; /* Height of the header */
   max-height: 45px; /* Ensure max-height is also set */
-  bottom: 20px; /* Reposition when minimized */
+  /* bottom: 20px;  We don't control bottom anymore */
 }
 
 #ai-mindful-panel.minimized .ai-panel-body {
@@ -53,6 +58,7 @@
   font-size: 14px;
   cursor: grab; /* Indicate it can be moved */
   flex-shrink: 0; /* Prevent header from shrinking */
+  user-select: none; /* Prevent text selection on the header */
 }
 
 .ai-panel-header .contact-name {

@@ -25,8 +25,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 });
 
 async function getAiSuggestions(payload) {
-  // Destructure payload, including the optional user-provided API key
-  const { chatHistory, customStrategy, userDraft, apiKey } = payload;
+  // Destructure payload, including the optional user-provided API key and model
+  const { chatHistory, customStrategy, userDraft, apiKey, model } = payload;
 
   console.log("Received payload for AI suggestions:", payload);
 
@@ -37,8 +37,11 @@ async function getAiSuggestions(payload) {
     throw new Error("API key is missing. Please add it to config.js or in the extension settings.");
   }
 
+  // Use the user's selected model, or fall back to a default
+  const modelToUse = model || 'gemini-2.5-flash-lite-preview-06-17';
+
   // --- THIS IS THE REAL GEMINI API CALL ---
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${keyToUse}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelToUse}:generateContent?key=${keyToUse}`;
 
   console.log("Calling Gemini API with payload:", payload);
 
@@ -50,17 +53,16 @@ async function getAiSuggestions(payload) {
     "${userDraft}"
 
     **Task:**
-    Based on the strategy and history, refine the user's draft reply. Provide 3 improved versions in a JSON array.
+    Based on the strategy and history, refine the user's draft reply. Provide 3 improved versions.
     `;
   } else {
     taskDescription = `
     **Task:**
-    Based on the strategy and history, suggest 3 potential replies to the last message in a JSON array.
+    Based on the strategy and history, suggest 3 potential replies to the last message.
     `;
   }
 
   const prompt = `You are a communication assistant. Your goal is to help the user reply to messages based on a specific strategy.
-  You must reply with a valid JSON object containing a single key "suggestions" which is an array of strings.
 
   **Custom Reply Strategy:**
   ${customStrategy || "Reply in a friendly and supportive tone."}
@@ -82,6 +84,18 @@ async function getAiSuggestions(payload) {
     }],
     generationConfig: {
       response_mime_type: "application/json",
+      response_schema: {
+        type: "object",
+        properties: {
+          "suggestions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["suggestions"]
+      }
     }
   };
   console.log("--- API PAYLOAD ---");
@@ -109,7 +123,7 @@ async function getAiSuggestions(payload) {
         result.candidates[0].content.parts.length > 0) {
       
       const rawText = result.candidates[0].content.parts[0].text;
-      // The model is now instructed to return a JSON string.
+      // The model is now instructed to return a JSON string conforming to the schema.
       const parsedJson = JSON.parse(rawText);
       
       if (!parsedJson.suggestions || !Array.isArray(parsedJson.suggestions)) {
