@@ -1,0 +1,236 @@
+/* --- General Styles & Variables --- */
+:root {
+    --primary-color: #4A90E2; /* A friendly, trustworthy blue */
+    --primary-hover: #357ABD;
+    --secondary-color: #F5A623; /* A warm, inviting orange for accents */
+    --background-color: #FDFDFD;
+    --text-color: #333;
+    --light-text-color: #666;
+    --panel-bg: #FFFFFF;
+    --border-color: #EAEAEA;
+    --font-family: 'Inter', sans-serif;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--background-color);
+    color: var(--text-color);
+    line-height: 1.6;
+    margin: 0;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* --- Header --- */
+.header {
+    background-color: var(--panel-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 15px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.header .container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo img {
+    width: 40px;
+    height: 40px;
+}
+
+.logo h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.header nav a {
+    color: var(--text-color);
+    text-decoration: none;
+    margin-left: 25px;
+    font-weight: 500;
+    transition: color 0.2s ease;
+}
+
+.header nav a:hover {
+    color: var(--primary-color);
+}
+
+/* --- Hero Section --- */
+.hero {
+    text-align: center;
+    padding: 80px 0;
+    background-color: var(--panel-bg);
+}
+
+.hero h2 {
+    font-size: 48px;
+    font-weight: 900;
+    margin: 0 0 15px;
+    color: var(--text-color);
+}
+
+.hero .subtitle {
+    font-size: 18px;
+    color: var(--light-text-color);
+    max-width: 600px;
+    margin: 0 auto 30px;
+}
+
+.cta-button {
+    background-color: var(--primary-color);
+    color: white;
+    text-decoration: none;
+    padding: 15px 35px;
+    border-radius: 8px;
+    font-size: 18px;
+    font-weight: 700;
+    transition: background-color 0.2s ease;
+}
+
+.cta-button:hover {
+    background-color: var(--primary-hover);
+}
+
+.hero-image-placeholder {
+    margin: 50px auto 0;
+    width: 80%;
+    max-width: 800px;
+    height: 450px;
+    background-color: #F0F0F0;
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--light-text-color);
+    font-size: 20px;
+    font-weight: 500;
+}
+
+/* --- Features Section --- */
+.features {
+    padding: 80px 0;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 36px;
+    font-weight: 700;
+    margin-bottom: 50px;
+}
+
+.features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 30px;
+}
+
+.feature-item {
+    background-color: var(--panel-bg);
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+
+.feature-item h4 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 10px;
+}
+
+.feature-item p {
+    color: var(--light-text-color);
+    margin: 0;
+}
+
+/* --- Why Choose Us Section --- */
+.why-choose-us {
+    padding: 80px 0;
+    background-color: var(--panel-bg);
+}
+
+.why-choose-us .container {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+}
+
+.why-choose-us-content {
+    flex: 1;
+}
+
+.why-choose-us ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.why-choose-us li {
+    font-size: 18px;
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.why-choose-us .image-placeholder {
+    flex: 1;
+    height: 300px;
+    background-color: #F0F0F0;
+    border: 2px dashed var(--border-color);
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--light-text-color);
+}
+
+/* --- FAQ Section --- */
+.faq {
+    padding: 80px 0;
+}
+
+.faq .container {
+    max-width: 800px;
+}
+
+.faq-item {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px;
+    margin-bottom: 20px;
+}
+
+.faq-item:last-child {
+    border-bottom: none;
+}
+
+.faq-item h4 {
+    font-size: 20px;
+    margin: 0 0 10px;
+}
+
+.faq-item p {
+    color: var(--light-text-color);
+    margin: 0;
+}
+
+/* --- Footer --- */
+.footer {
+    background-color: var(--text-color);
+    color: white;
+    text-align: center;
+    padding: 20px 0;
+}
