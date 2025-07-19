@@ -26,6 +26,17 @@ Whether you're struggling with writer's block, want to save time on frequent rep
 -   **Communicate with Confidence:** Ensure your messages are clear, professional, and aligned with your intentions.
 -   **Build Better Relationships:** Use empathetic and mindful language to foster stronger connections with your contacts.
 
+## 📸 Screenshots
+
+Here's a look at the Mindful AI Assistant in action.
+
+| Full Context View                                                                            | Focused UI & Settings                                                                        |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| See how the assistant seamlessly integrates with your WhatsApp Web interface.                | The clean panel provides powerful suggestions, while the settings offer total customization. |
+| ![Full Context View](docs/images/Screenshots/hero-screenshot.png)                            | ![Focused UI](docs/images/Screenshots/screenshot-panel.png)                                  |
+|                                                                                              | ![Settings Modal](docs/images/Screenshots/Settings%20Modal.png)                              |
+
+
 ## 🛠️ How to Install and Use
 
 1.  **Download the Extension:** Get the extension from the Chrome Web Store (link coming soon) or load it manually.

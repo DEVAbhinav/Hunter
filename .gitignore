@@ -1,1 +1,12 @@
+# API keys and sensitive information
 config.js
+
+# macOS specific files
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnail cache files
+._*
+.Spotlight-V100
+.Trashes

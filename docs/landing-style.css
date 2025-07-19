@@ -158,6 +158,46 @@ body {
     margin: 0;
 }
 
+/* --- Showcase Section --- */
+.showcase {
+    padding: 80px 0;
+    background-color: var(--panel-bg);
+}
+
+.showcase-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 50px;
+    align-items: start;
+}
+
+.showcase-item {
+    text-align: center;
+}
+
+.showcase-item img {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+.showcase-item h4 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 10px;
+}
+
+.showcase-item p {
+    color: var(--light-text-color);
+    margin: 0;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
 /* --- Why Choose Us Section --- */
 .why-choose-us {
     padding: 80px 0;
