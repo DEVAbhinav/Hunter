@@ -110,17 +110,16 @@ body {
     margin: 50px auto 0;
     width: 80%;
     max-width: 800px;
-    height: 450px;
-    background-color: #F0F0F0;
-    border: 2px dashed var(--border-color);
-    border-radius: 12px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: var(--light-text-color);
-    font-size: 20px;
-    font-weight: 500;
 }
+
+.hero-image-placeholder img {
+    width: 100%;
+    height: auto; /* Maintain aspect ratio */
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+}
+
 
 /* --- Features Section --- */
 .features {
